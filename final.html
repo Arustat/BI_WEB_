@@ -12,6 +12,10 @@
         <div class="big-ball ball-2"></div>
         <div class="big-ball ball-3"></div>
     </div>
+    <!-- Menu principal fixe (haut-gauche) -->
+    <nav class="main-menu" role="navigation" aria-label="Menu principal">
+        <button class="btn-home" onclick="window.location.href='index.html'" aria-label="Menu principal">☰ Menu</button>
+    </nav>
     <!-- Container pour l'effet Star Wars (hors du container pour ne pas bloquer le scroll) -->
     <div class="starwars-container" id="starwarsContainer">
         <div class="starwars-content" id="starwarsContent">
@@ -71,6 +75,15 @@
             const happyBirthday = document.getElementById('happyBirthday');
             let hasTriggeredConfetti = false;
             let scrollProgress = 0;
+            // small photo sources to drop as confetti
+            const photoDrops = [
+                'asset/photo/lycee.jpg',
+                'asset/photo/nous_1.jpg',
+                'asset/photo/nous_2.jpg',
+                'asset/photo/nous_3.jpg',
+                'asset/photo/nous_4.jpg',
+                'asset/photo/nous_5.jpg'
+            ];
             
             // Fonction pour créer une paillette
             function createConfetti() {
@@ -98,6 +111,28 @@
                     confetti.remove();
                 }, duration * 1000 + 500);
             }
+
+            function createPhotoDrop() {
+                // create an image element that falls like confetti
+                const img = document.createElement('img');
+                img.className = 'confetti-photo';
+                const src = photoDrops[Math.floor(Math.random() * photoDrops.length)];
+                img.src = src;
+                img.alt = '';
+                // random horizontal position
+                img.style.left = Math.random() * 100 + '%';
+                const duration = 3 + Math.random() * 3; // 3-6s
+                img.style.animationDuration = duration + 's';
+                img.style.animationDelay = Math.random() * 0.6 + 's';
+                // random rotation seed
+                img.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+                confettiContainer.appendChild(img);
+
+                setTimeout(() => {
+                    try { img.remove(); } catch(e) {}
+                }, duration * 1000 + 700);
+            }
             
             // Fonction pour créer plusieurs paillettes
             function createConfettiBurst() {
@@ -107,8 +142,13 @@
                 // Créer 100 paillettes
                 for (let i = 0; i < 100; i++) {
                     setTimeout(() => {
-                        createConfetti();
-                    }, i * 20); // Étaler la création sur 2 secondes
+                        // alternate confetti and tiny photos
+                        if (Math.random() < 0.28) {
+                            createPhotoDrop();
+                        } else {
+                            createConfetti();
+                        }
+                    }, i * 20); // Étaler la création sur ~2 secondes
                 }
                 
                 // Afficher Happy Birthday après un court délai

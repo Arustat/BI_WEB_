@@ -12,6 +12,10 @@
         <div class="big-ball ball-2"></div>
         <div class="big-ball ball-3"></div>
     </div>
+    <!-- Menu principal fixe (haut-gauche) -->
+    <nav class="main-menu" role="navigation" aria-label="Menu principal">
+        <button class="btn-home" onclick="window.location.href='index.html'" aria-label="Menu principal">☰ Menu</button>
+    </nav>
     <div class="container">
         <h2 class="page-title">Nos souvenirs</h2>
         
@@ -47,14 +51,19 @@
             <span class="music-status">ON</span>
         </button>
         
-        <!-- Bouton vers le message final -->
-        <button class="btn-next" onclick="window.location.href='final.html'">Lire le message</button>
+        <!-- Bouton vers le message final (déclenche paillettes puis navigation) -->
+        <button class="btn-next" id="btnNextToFinal">Lire le message</button>
     </div>
+
     
+    <!-- Conteneur pour paillettes (ne modifie pas le layout) -->
+    <div class="confetti-container" id="confettiContainer" aria-hidden="true"></div>
+
     <!-- Overlay pour les messages -->
     <div class="overlay" id="overlay">
         <div class="overlay-content">
             <button class="overlay-close" onclick="closeOverlay()">&times;</button>
+            <div id="overlayMedia" class="overlay-media"></div>
             <p class="overlay-message" id="overlayMessage"></p>
         </div>
     </div>
@@ -76,8 +85,8 @@
             { src: 'asset/photo/nous_6.jpg', message: 'On a grandi ensemble (pas que physiquement la phrase chelou tu sais) et je suis fière de t\'avoir à mes côtés.' },
             { src: 'asset/photo/lant_1.jpg', message: 'Tous ces souvenirs, je ne les oublierai jamais et je suis heureuse d\'avoir pu partager cette année avec toi.' },
             { src: 'asset/photo/lant_2.jpg', message: 'Merci d\'être toi, tout simplement .' },
-            { src: 'asset/photo/lant_3.jpg', message: 'J\'étais obligé de mettre des photos de Lantosque, j\'ai vécu un super voyage et on n\'a pas fait le tour du monde.' },
-            { src: 'asset/photo/lant_4.jpg', message: 'Tu mérites tout le bonheur du monde et une meilleure mayssa.' },
+            { src: 'asset/photo/lant_3.MP4', message: 'Tu mérites tout le bonheur du monde et une meilleure mayssa.' },
+            { src: 'asset/photo/lant_4.jpg', message: 'J\'étais obligé de mettre des photos de Lantosque, j\'ai vécu un super voyage et on n\'a pas fait le tour du monde.' },
             { src: 'asset/photo/mot_amour.jpg', message: 'Je t\'aime du fond du cœur, vraiment.' }
         ];
         
@@ -95,21 +104,41 @@
             slide.dataset.index = index;
             
             const img = document.createElement('img');
-            img.src = photo.src;
-            img.alt = 'Souvenir';
             img.loading = 'lazy';
             img.onerror = function() {
-                this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f0e6f7" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239d7fb8" font-family="sans-serif" font-size="20"%3EPhoto%3C/text%3E%3C/svg%3E';
+                this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f0e6f7" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239d7fb8" font-family="sans-serif" font-size="20"%3EMedia%3C/text%3E%3C/svg%3E';
             };
-            
-            slide.appendChild(img);
-            
-            // Message au clic
-            slide.addEventListener('click', () => {
-                if (index === currentIndex) {
+
+            // detect video files by extension (case-insensitive)
+            const isVideo = /\.(mp4|webm|ogg)$/i.test(photo.src);
+            if (isVideo) {
+                // try to use a poster image with same name but .jpg
+                const posterFromSrc = photo.src.replace(/\.[^/.]+$/, '.jpg');
+                img.src = photo.poster || posterFromSrc;
+                img.alt = 'Vignette vidéo';
+                slide.classList.add('video-slide');
+
+                // play button overlay on the slide
+                const playBtn = document.createElement('div');
+                playBtn.className = 'video-play-btn';
+                playBtn.setAttribute('aria-hidden', 'true');
+                playBtn.innerHTML = '▶';
+                slide.appendChild(playBtn);
+
+                // on click open overlay with message + video
+                slide.addEventListener('click', () => {
+                    showOverlay(photo.message, { type: 'video', src: photo.src, poster: photo.poster || posterFromSrc });
+                });
+            } else {
+                img.src = photo.src;
+                img.alt = 'Souvenir';
+                // Message au clic — ouvrir le message même si la slide n'est pas strictement la "current"
+                slide.addEventListener('click', () => {
                     showOverlay(photo.message);
-                }
-            });
+                });
+            }
+
+            slide.appendChild(img);
             
             carouselTrack.appendChild(slide);
             
@@ -133,15 +162,16 @@
             animationFrameId = requestAnimationFrame(() => {
                 const slides = document.querySelectorAll('.carousel-slide');
                 const totalSlides = slides.length;
-                
+                // largeur du slide courant pour espacement responsive
+                const slideWidth = slides[0] ? slides[0].offsetWidth : 350;
+
                 slides.forEach((slide, index) => {
                     const offset = index - currentIndex;
                     const absOffset = Math.abs(offset);
                     
-                    // Calculer la position pour un carrousel classique
-                    // Image centrale nette, images adjacentes floutées
-                    const translateX = offset * 400; // Espacement horizontal plus large
-                    const translateZ = -absOffset * 150; // Profondeur réduite
+                    // Calculer la position pour un carrousel classique (espacement dynamique)
+                    const translateX = Math.round(offset * (slideWidth * 1.05)); // Espacement horizontal dynamique
+                    const translateZ = -absOffset * Math.round(slideWidth * 0.45); // profondeur relative à la taille
                     const angle = offset * 20; // Rotation un peu plus prononcée pour l'animation
                     const scale = absOffset === 0 ? 1 : Math.max(0.7, 1 - absOffset * 0.15);
                     const opacity = absOffset > 2 ? 0.3 : Math.max(0.3, 1 - absOffset * 0.2);
@@ -323,13 +353,48 @@
         // Initialiser le carrousel
         updateCarousel();
         
-        function showOverlay(message) {
+        function showOverlay(message, media) {
             document.getElementById('overlayMessage').textContent = message;
-            document.getElementById('overlay').classList.add('active');
+            const overlay = document.getElementById('overlay');
+            const mediaContainer = document.getElementById('overlayMedia');
+            // clear previous media
+            mediaContainer.innerHTML = '';
+
+            if (media && media.type === 'video') {
+                const video = document.createElement('video');
+                video.src = media.src;
+                video.controls = true;
+                video.playsInline = true;
+                video.autoplay = true;
+                if (media.poster) video.poster = media.poster;
+                mediaContainer.appendChild(video);
+                // try to play (user initiated click should allow playback)
+                video.play().catch(() => {});
+            }
+
+            overlay.classList.add('active');
+            // prevent background scroll on mobile
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
+            // ensure overlay is visible on small viewports
+            setTimeout(() => {
+                overlay.scrollIntoView({ behavior: 'auto', block: 'center' });
+            }, 50);
         }
-        
+
         function closeOverlay() {
-            document.getElementById('overlay').classList.remove('active');
+            const overlay = document.getElementById('overlay');
+            const mediaContainer = document.getElementById('overlayMedia');
+            // pause and remove any video
+            const vid = mediaContainer.querySelector('video');
+            if (vid) {
+                try { vid.pause(); } catch (e) {}
+            }
+            mediaContainer.innerHTML = '';
+            overlay.classList.remove('active');
+            // restore scroll
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
         }
         
         // Fermer l'overlay en cliquant à l'extérieur
@@ -338,6 +403,78 @@
                 closeOverlay();
             }
         });
+
+        // --- Confetti pour la page souvenirs (non intrusif, ne modifie pas le layout/responsive) ---
+        const confettiContainer = document.getElementById('confettiContainer');
+
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            const duration = 3 + Math.random() * 2; // 3-5s
+            confetti.style.animationDuration = duration + 's';
+            confetti.style.animationDelay = (Math.random() * 0.6) + 's';
+            confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+            confettiContainer.appendChild(confetti);
+            setTimeout(() => { try { confetti.remove(); } catch (e) {} }, duration * 1000 + 800);
+        }
+
+        function createConfettiBurst(count = 60) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => createConfetti(), i * 18);
+            }
+        }
+
+        // Naviguer vers la page finale au clic (sans déclencher les paillettes)
+        const btnNextToFinal = document.getElementById('btnNextToFinal');
+        if (btnNextToFinal) {
+            btnNextToFinal.addEventListener('click', (e) => {
+                e.preventDefault();
+                // navigation rapide, laisser les animations déjà lancées sur le chargement
+                setTimeout(() => { window.location.href = 'final.html'; }, 200);
+            });
+        }
+
+        // Lancer des paillettes en continu en arrière-plan (adapté aux mobiles)
+        function startInfiniteConfetti() {
+            // Determine device class to tune intensity
+            const w = Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0);
+            let perTick = 12;
+            let interval = 900; // ms between bursts
+
+            if (w < 480) {
+                perTick = 6; interval = 1200;
+            } else if (w < 1024) {
+                perTick = 10; interval = 1000;
+            } else {
+                perTick = 14; interval = 700;
+            }
+
+            // Small stagger between pieces inside a burst for nicer spread
+            const makeBurst = (count) => {
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => createConfetti(), i * 30);
+                }
+            };
+
+            // Create an initial gentle burst
+            setTimeout(() => makeBurst(Math.round(perTick * 0.9)), 220);
+
+            // Start periodic bursts
+            const timer = setInterval(() => {
+                makeBurst(perTick);
+            }, interval);
+
+            // Store timer so we can stop it later if needed
+            window.__souvenirsConfettiTimer = timer;
+        }
+
+        // Start confetti when page finishes loading (once) — continuous afterwards
+        if (document.readyState === 'complete') {
+            startInfiniteConfetti();
+        } else {
+            window.addEventListener('load', () => { startInfiniteConfetti(); }, { once: true });
+        }
     </script>
 </body>
 </html>
