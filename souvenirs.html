@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Souvenirs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-souvenirs">
+    <div class="background-balls">
+        <div class="big-ball ball-1"></div>
+        <div class="big-ball ball-2"></div>
+        <div class="big-ball ball-3"></div>
+    </div>
+    <div class="container">
+        <h2 class="page-title">Nos souvenirs</h2>
+        
+        <!-- Carrousel 3D -->
+        <div class="carousel-wrapper">
+            <div class="carousel-container" id="carouselContainer">
+                <div class="carousel-track" id="carouselTrack">
+                    <!-- Les photos seront chargées dynamiquement -->
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <button class="carousel-btn carousel-btn-prev" id="prevBtn" aria-label="Photo précédente">
+                <span>‹</span>
+            </button>
+            <button class="carousel-btn carousel-btn-next" id="nextBtn" aria-label="Photo suivante">
+                <span>›</span>
+            </button>
+            
+            <!-- Indicateurs -->
+            <div class="carousel-indicators" id="indicators"></div>
+        </div>
+        
+        <!-- Personnages Sanrio -->
+        <div class="sanrio-characters">
+            <img src="asset/sanrio/2.png" alt="" class="sanrio-char pos-5">
+            <img src="asset/sanrio/ku.png" alt="" class="sanrio-char pos-6">
+        </div>
+        
+        <!-- Toggle musique -->
+        <button class="music-toggle" id="musicToggle" aria-label="Toggle musique">
+            <span class="music-icon">🎵</span>
+            <span class="music-status">ON</span>
+        </button>
+        
+        <!-- Bouton vers le message final -->
+        <button class="btn-next" onclick="window.location.href='final.html'">Lire le message</button>
+    </div>
+    
+    <!-- Overlay pour les messages -->
+    <div class="overlay" id="overlay">
+        <div class="overlay-content">
+            <button class="overlay-close" onclick="closeOverlay()">&times;</button>
+            <p class="overlay-message" id="overlayMessage"></p>
+        </div>
+    </div>
+    
+    <audio id="backgroundMusic" loop>
+        <source src="asset/song/sk.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script src="script.js"></script>
+    <script>
+        // Configuration des photos et messages
+        const photosData = [
+            { src: 'asset/photo/lycee.jpg', message: 'Depuis le lycée, on est là l\'une pour l\'autre. Merci d\'être restée.' },
+            { src: 'asset/photo/nous_1.jpg', message: 'Tous ces moments qu\'on a partagés, c\'était crazy !' },
+            { src: 'asset/photo/nous_2.jpg', message: 'Tu es douce, attentionnée, et tu rends tout plus beau (GPT a généré ce message et j\'ai jamais autant été d\'accord avec lui).' },
+            { src: 'asset/photo/nous_3.jpg', message: 'Chaque rire, chaque sourire, chaque instant avec toi compte.' },
+            { src: 'asset/photo/nous_4.jpg', message: 'Tu es courageuse et jolie sans même t\'en rendre compte et ton style est incroyable.' },
+            { src: 'asset/photo/nous_5.jpg', message: 'On a tellement rire ensemble et on a fait plein de conneries ensemble.'},
+            { src: 'asset/photo/nous_6.jpg', message: 'On a grandi ensemble (pas que physiquement la phrase chelou tu sais) et je suis fière de t\'avoir à mes côtés.' },
+            { src: 'asset/photo/lant_1.jpg', message: 'Tous ces souvenirs, je ne les oublierai jamais et je suis heureuse d\'avoir pu partager cette année avec toi.' },
+            { src: 'asset/photo/lant_2.jpg', message: 'Merci d\'être toi, tout simplement .' },
+            { src: 'asset/photo/lant_3.jpg', message: 'J\'étais obligé de mettre des photos de Lantosque, j\'ai vécu un super voyage et on n\'a pas fait le tour du monde.' },
+            { src: 'asset/photo/lant_4.jpg', message: 'Tu mérites tout le bonheur du monde et une meilleure mayssa.' },
+            { src: 'asset/photo/mot_amour.jpg', message: 'Je t\'aime du fond du cœur, vraiment.' }
+        ];
+        
+        // Carrousel 3D
+        let currentIndex = 0;
+        const carouselTrack = document.getElementById('carouselTrack');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const indicators = document.getElementById('indicators');
+        
+        // Créer les slides du carrousel
+        photosData.forEach((photo, index) => {
+            const slide = document.createElement('div');
+            slide.className = 'carousel-slide';
+            slide.dataset.index = index;
+            
+            const img = document.createElement('img');
+            img.src = photo.src;
+            img.alt = 'Souvenir';
+            img.loading = 'lazy';
+            img.onerror = function() {
+                this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f0e6f7" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239d7fb8" font-family="sans-serif" font-size="20"%3EPhoto%3C/text%3E%3C/svg%3E';
+            };
+            
+            slide.appendChild(img);
+            
+            // Message au clic
+            slide.addEventListener('click', () => {
+                if (index === currentIndex) {
+                    showOverlay(photo.message);
+                }
+            });
+            
+            carouselTrack.appendChild(slide);
+            
+            // Créer indicateur
+            const indicator = document.createElement('button');
+            indicator.className = 'indicator';
+            indicator.dataset.index = index;
+            indicator.addEventListener('click', () => goToSlide(index));
+            indicators.appendChild(indicator);
+        });
+        
+        // Utiliser requestAnimationFrame pour des animations plus fluides
+        let animationFrameId = null;
+        
+        function updateCarousel() {
+            // Annuler l'animation précédente si elle existe
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            
+            animationFrameId = requestAnimationFrame(() => {
+                const slides = document.querySelectorAll('.carousel-slide');
+                const totalSlides = slides.length;
+                
+                slides.forEach((slide, index) => {
+                    const offset = index - currentIndex;
+                    const absOffset = Math.abs(offset);
+                    
+                    // Calculer la position pour un carrousel classique
+                    // Image centrale nette, images adjacentes floutées
+                    const translateX = offset * 400; // Espacement horizontal plus large
+                    const translateZ = -absOffset * 150; // Profondeur réduite
+                    const angle = offset * 20; // Rotation un peu plus prononcée pour l'animation
+                    const scale = absOffset === 0 ? 1 : Math.max(0.7, 1 - absOffset * 0.15);
+                    const opacity = absOffset > 2 ? 0.3 : Math.max(0.3, 1 - absOffset * 0.2);
+                    
+                    // Ajouter un léger mouvement vertical pour les images adjacentes
+                    const translateY = absOffset === 0 ? 0 : Math.sin(absOffset * 0.5) * 10;
+                    
+                    // Appliquer le flou sur les images adjacentes (gauche et droite)
+                    let blur = 0;
+                    if (absOffset === 1) {
+                        blur = 8; // Flou modéré pour les images adjacentes
+                    } else if (absOffset === 2) {
+                        blur = 12; // Flou plus fort pour les images plus éloignées
+                    } else if (absOffset > 2) {
+                        blur = 15; // Flou maximum
+                    }
+                    
+                    // Appliquer les transformations 3D avec parallaxe si activé
+                    const parallaxX = (absOffset === 0 && parallaxEnabled) ? parallaxRotateX : 0;
+                    const parallaxY = (absOffset === 0 && parallaxEnabled) ? parallaxRotateY : 0;
+                    
+                    // Utiliser translate3d pour l'accélération matérielle avec mouvement vertical
+                    slide.style.transform = `
+                        translate3d(${translateX}px, ${translateY}px, ${translateZ}px) 
+                        rotateY(${angle + parallaxY}deg)
+                        rotateX(${parallaxX}deg)
+                        scale3d(${scale}, ${scale}, 1)
+                    `;
+                    slide.style.opacity = opacity;
+                    slide.style.zIndex = totalSlides - absOffset;
+                    
+                    // Appliquer le flou et la luminosité
+                    slide.style.filter = `
+                        blur(${blur}px) 
+                        brightness(${absOffset === 0 ? 1 : 0.8 - absOffset * 0.1})
+                    `;
+                    
+                    // Ajouter classe active pour animations
+                    if (absOffset === 0) {
+                        slide.classList.add('active');
+                    } else {
+                        slide.classList.remove('active');
+                    }
+                });
+                
+                // Mettre à jour les indicateurs
+                document.querySelectorAll('.indicator').forEach((ind, idx) => {
+                    ind.classList.toggle('active', idx === currentIndex);
+                });
+            });
+        }
+        
+        // Variables pour effet parallaxe
+        let parallaxRotateX = 0;
+        let parallaxRotateY = 0;
+        let parallaxEnabled = true;
+        let previousIndex = 0;
+        
+        function goToSlide(index) {
+            if (index < 0) index = photosData.length - 1;
+            if (index >= photosData.length) index = 0;
+            
+            // Désactiver parallaxe pendant la transition
+            parallaxEnabled = false;
+            parallaxRotateX = 0;
+            parallaxRotateY = 0;
+            
+            // Ajouter des classes d'animation selon la direction
+            const slides = document.querySelectorAll('.carousel-slide');
+            const direction = index > previousIndex ? 'right' : 'left';
+            
+            slides.forEach((slide, slideIndex) => {
+                slide.classList.remove('transitioning', 'slide-in-left', 'slide-in-right', 'slide-out-left', 'slide-out-right');
+                
+                if (slideIndex === previousIndex && slideIndex !== index) {
+                    // Slide qui sort
+                    slide.classList.add(direction === 'right' ? 'slide-out-left' : 'slide-out-right');
+                } else if (slideIndex === index && slideIndex !== previousIndex) {
+                    // Slide qui entre
+                    slide.classList.add(direction === 'right' ? 'slide-in-right' : 'slide-in-left');
+                }
+            });
+            
+            previousIndex = currentIndex;
+            currentIndex = index;
+            updateCarousel();
+            
+            // Réactiver après la transition
+            setTimeout(() => {
+                parallaxEnabled = true;
+                slides.forEach(slide => {
+                    slide.classList.remove('transitioning', 'slide-in-left', 'slide-in-right', 'slide-out-left', 'slide-out-right');
+                });
+            }, 600);
+        }
+        
+        function nextSlide() {
+            goToSlide(currentIndex + 1);
+        }
+        
+        function prevSlide() {
+            goToSlide(currentIndex - 1);
+        }
+        
+        // Navigation
+        nextBtn.addEventListener('click', nextSlide);
+        prevBtn.addEventListener('click', prevSlide);
+        
+        // Swipe pour mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        carouselTrack.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        carouselTrack.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+        }
+        
+        // Navigation clavier
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'ArrowRight') nextSlide();
+        });
+        
+        // Effet parallaxe au survol de la souris avec throttling pour fluidité
+        const carouselWrapper = document.querySelector('.carousel-wrapper');
+        let parallaxFrameId = null;
+        
+        if (carouselWrapper) {
+            carouselWrapper.addEventListener('mousemove', (e) => {
+                if (!parallaxEnabled) return;
+                
+                // Throttle avec requestAnimationFrame pour fluidité
+                if (parallaxFrameId) {
+                    cancelAnimationFrame(parallaxFrameId);
+                }
+                
+                parallaxFrameId = requestAnimationFrame(() => {
+                    const rect = carouselWrapper.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    
+                    // Interpolation douce pour éviter les saccades
+                    parallaxRotateX += ((y - centerY) / 25 - parallaxRotateX) * 0.15;
+                    parallaxRotateY += ((centerX - x) / 25 - parallaxRotateY) * 0.15;
+                    
+                    updateCarousel();
+                });
+            });
+            
+            carouselWrapper.addEventListener('mouseleave', () => {
+                if (parallaxFrameId) {
+                    cancelAnimationFrame(parallaxFrameId);
+                }
+                parallaxRotateX = 0;
+                parallaxRotateY = 0;
+                updateCarousel();
+            });
+        }
+        
+        // Initialiser le carrousel
+        updateCarousel();
+        
+        function showOverlay(message) {
+            document.getElementById('overlayMessage').textContent = message;
+            document.getElementById('overlay').classList.add('active');
+        }
+        
+        function closeOverlay() {
+            document.getElementById('overlay').classList.remove('active');
+        }
+        
+        // Fermer l'overlay en cliquant à l'extérieur
+        document.getElementById('overlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeOverlay();
+            }
+        });
+    </script>
+</body>
+</html>
+

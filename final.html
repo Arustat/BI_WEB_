@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-final">
+    <div class="background-balls">
+        <div class="big-ball ball-1"></div>
+        <div class="big-ball ball-2"></div>
+        <div class="big-ball ball-3"></div>
+    </div>
+    <!-- Container pour l'effet Star Wars (hors du container pour ne pas bloquer le scroll) -->
+    <div class="starwars-container" id="starwarsContainer">
+        <div class="starwars-content" id="starwarsContent">
+            <p class="letter-greeting">Très cher Meilleure amie,</p>
+            
+            <p>Je vais faire simple parce que je veux pas tourner en rond : j'ai encore oublié ton anniv, genre l'amie en carton. Et ça me tue parce que t'es la dernière personne que je veux blesser ou décevoir. J'ai vraiment cru que c'était le 24 cette année, j'avais même noté ça comme une débile… mais bref, j'ai merdé. Encore. Et j'en suis désolée. Vraiment.</p>
+            
+            <p>La vérité, c'est que la date en elle-même, j'ai jamais été douée avec ça — mais toi, tu comptes vraiment. Et je t'aime tellement que ça m'énerve moi-même d'avoir l'air de pas faire attention. Tu comptes trop pour que je donne cette impression.</p>
+            
+            <p>Depuis le lycée, t'es là. Et c'est pas juste "une amie", t'es un morceau entier de ma vie. T'es douce, attentionnée, courageuse, jolie sans même t'en rendre compte, et t'as ce truc bienveillant que presque personne que j'ai rencontré a. Et moi j'ai toujours eu de la chance de t'avoir à mes côtés.</p>
+            
+            <p>Je veux que tu saches que je t'aime du fond du cœur. Pas juste en mode "on est amies", mais vraiment en mode t'es une des personnes les plus importantes que j'ai. Et même si je suis pas parfaite, même si j'oublie des dates comme une gogole, jamais je t'oublie toi.</p>
+            
+            <p>Joyeux 20 ans, ma babe. J'espère que cette année t'apportera tout ce que t'as pas encore osé demander. Et sache un truc : je suis là, je reste, et je ferai mieux. Parce que tu mérites mieux que mes bugs de calendrier à la con.</p>
+            
+            <p>Je t'aime fort. Vraiment.</p>
+            
+            <p class="letter-signature">— Mayssa</p>
+        </div>
+    </div>
+    
+    <!-- Container pour les paillettes -->
+    <div class="confetti-container" id="confettiContainer"></div>
+    
+    <!-- Message Happy Birthday -->
+    <div class="happy-birthday" id="happyBirthday">
+        <h1 class="happy-birthday-text">Happy Birthday!</h1>
+    </div>
+    
+    <div class="container">
+        <!-- Personnages Sanrio subtils -->
+        <div class="sanrio-characters">
+            <img src="asset/sanrio/ku.png" alt="" class="sanrio-char pos-7">
+            <img src="asset/sanrio/2.png" alt="" class="sanrio-char pos-8">
+        </div>
+        
+        <!-- Toggle musique -->
+        <button class="music-toggle" id="musicToggle" aria-label="Toggle musique">
+            <span class="music-icon">🎵</span>
+            <span class="music-status">ON</span>
+        </button>
+        
+        <!-- Bouton retour -->
+        <button class="btn-back" onclick="window.location.href='souvenirs.html'">Revoir les souvenirs</button>
+    </div>
+    
+    <audio id="backgroundMusic" loop>
+        <source src="asset/song/sk.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script src="script.js"></script>
+    <script>
+        // Effet Star Wars avec scroll
+        document.addEventListener('DOMContentLoaded', function() {
+            const starwarsContent = document.getElementById('starwarsContent');
+            const confettiContainer = document.getElementById('confettiContainer');
+            const happyBirthday = document.getElementById('happyBirthday');
+            let hasTriggeredConfetti = false;
+            let scrollProgress = 0;
+            
+            // Fonction pour créer une paillette
+            function createConfetti() {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                
+                // Position aléatoire en largeur
+                confetti.style.left = Math.random() * 100 + '%';
+                
+                // Durée de chute aléatoire
+                const duration = 3 + Math.random() * 2; // 3-5 secondes
+                confetti.style.animationDuration = duration + 's';
+                
+                // Délai aléatoire
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                
+                // Rotation aléatoire
+                const rotation = Math.random() * 360;
+                confetti.style.transform = `rotate(${rotation}deg)`;
+                
+                confettiContainer.appendChild(confetti);
+                
+                // Supprimer après l'animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, duration * 1000 + 500);
+            }
+            
+            // Fonction pour créer plusieurs paillettes
+            function createConfettiBurst() {
+                if (hasTriggeredConfetti) return;
+                hasTriggeredConfetti = true;
+                
+                // Créer 100 paillettes
+                for (let i = 0; i < 100; i++) {
+                    setTimeout(() => {
+                        createConfetti();
+                    }, i * 20); // Étaler la création sur 2 secondes
+                }
+                
+                // Afficher Happy Birthday après un court délai
+                setTimeout(() => {
+                    happyBirthday.classList.add('show');
+                }, 1000);
+            }
+            
+            // Gérer le scroll pour l'animation Star Wars
+            let ticking = false;
+            const scrollHeight = 3000; // Hauteur totale du scroll en pixels
+            
+            function updateStarWars() {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const maxScroll = Math.max(scrollHeight, documentHeight);
+                const progress = Math.min(scrollTop / maxScroll, 1);
+                
+                // Mettre à jour la position de l'animation Star Wars
+                if (starwarsContent) {
+                    // Calculer les transformations
+                    // Commence au centre (0%) et monte vers le haut (-150%)
+                    const startY = 0; // Commence au centre de l'écran
+                    const endY = -150; // Se termine en haut
+                    const translateY = startY - (progress * (startY - endY));
+                    
+                    const startScale = 1;
+                    const endScale = 0.1;
+                    const scale = startScale - (progress * (startScale - endScale));
+                    
+                    const rotateX = 25; // Angle de perspective constant
+                    
+                    const opacity = Math.max(0, 1 - (progress * 0.5)); // Fade out progressif
+                    
+                    // Appliquer les transformations avec translate3d pour performance
+                    starwarsContent.style.transform = `
+                        translate3d(-50%, ${translateY}%, 0) 
+                        rotateX(${rotateX}deg) 
+                        scale3d(${scale}, ${scale}, 1)
+                    `;
+                    starwarsContent.style.opacity = opacity;
+                    
+                    // Détecter quand le texte est complètement sorti de l'écran
+                    // Le texte n'est plus visible quand :
+                    // - Il est très petit (scale < 0.3)
+                    // - Il est très haut (translateY < -100%)
+                    // - L'opacité est très faible (opacity < 0.2)
+                    const textIsGone = scale < 0.3 || translateY < -100 || opacity < 0.2;
+                    
+                    // Gérer l'affichage du Happy Birthday
+                    if (textIsGone) {
+                        // Afficher Happy Birthday seulement quand le texte n'est plus visible
+                        if (!hasTriggeredConfetti) {
+                            createConfettiBurst();
+                        }
+                        if (!happyBirthday.classList.contains('show')) {
+                            happyBirthday.classList.add('show');
+                        }
+                    } else {
+                        // Cacher Happy Birthday si on scroll vers le haut et que le texte réapparaît
+                        if (happyBirthday.classList.contains('show')) {
+                            happyBirthday.classList.remove('show');
+                        }
+                        // Réinitialiser les paillettes si le texte redevient visible
+                        if (scale > 0.4 && opacity > 0.3) {
+                            hasTriggeredConfetti = false;
+                        }
+                    }
+                }
+                
+                ticking = false;
+            }
+            
+            // Écouter le scroll avec requestAnimationFrame pour fluidité
+            window.addEventListener('scroll', function() {
+                if (!ticking) {
+                    window.requestAnimationFrame(updateStarWars);
+                    ticking = true;
+                }
+            }, { passive: true });
+            
+            // Créer un espace de scroll suffisant
+            const spacer = document.createElement('div');
+            spacer.id = 'scrollSpacer';
+            spacer.style.height = scrollHeight + 'px';
+            spacer.style.width = '100%';
+            spacer.style.position = 'relative';
+            spacer.style.pointerEvents = 'none';
+            spacer.style.zIndex = '0';
+            spacer.style.background = 'transparent';
+            spacer.style.marginTop = '100vh'; // Commencer après la hauteur de l'écran
+            
+            // Ajouter le spacer au body
+            document.body.appendChild(spacer);
+            
+            // S'assurer que le body peut scroller
+            document.body.style.minHeight = (window.innerHeight + scrollHeight) + 'px';
+            document.documentElement.style.minHeight = (window.innerHeight + scrollHeight) + 'px';
+            
+            // Initialiser au chargement
+            updateStarWars();
+            
+            // Forcer un reflow pour s'assurer que le scroll fonctionne
+            setTimeout(() => {
+                updateStarWars();
+                
+                // Vérifier si déjà en bas au chargement
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                
+                if (scrollTop >= maxScroll * 0.95 || scrollTop >= scrollHeight * 0.95) {
+                    createConfettiBurst();
+                }
+            }, 100);
+            
+            // Debug: afficher la progression dans la console (optionnel)
+            // window.addEventListener('scroll', () => {
+            //     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            //     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            //     console.log('Scroll:', scrollTop, 'Max:', maxScroll, 'Progress:', (scrollTop / maxScroll * 100).toFixed(1) + '%');
+            // });
+        });
+    </script>
+</body>
+</html>
+

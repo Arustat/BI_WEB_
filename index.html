@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joyeux Anniversaire CANDICE</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-home">
+    <div class="background-balls">
+        <!-- Grandes boules blanches décoratives -->
+        <div class="big-ball ball-1"></div>
+        <div class="big-ball ball-2"></div>
+        <div class="big-ball ball-3"></div>
+    </div>
+    <div class="container">
+        <div class="content">
+            <div class="hero-image-container">
+                <img src="asset/screen/screen.jpg" alt="Joyeux anniversaire" class="hero-image">
+            </div>
+            <button class="btn-start" onclick="window.location.href='souvenirs.html'">START</button>
+        </div>
+        
+        <!-- Éléments 3D flottants (boules avec paillettes) -->
+        <div class="floating-3d-elements" id="floatingElements"></div>
+        
+        <!-- Personnages Sanrio flottants -->
+        <div class="sanrio-characters">
+            <img src="asset/sanrio/sanrio.png" alt="" class="sanrio-char pos-1">
+            <img src="asset/sanrio/2.png" alt="" class="sanrio-char pos-2">
+            <img src="asset/sanrio/ku.png" alt="" class="sanrio-char pos-3">
+            <img src="asset/sanrio/sanrio.png" alt="" class="sanrio-char pos-4">
+        </div>
+        
+        <!-- Toggle musique -->
+        <button class="music-toggle" id="musicToggle" aria-label="Toggle musique">
+            <span class="music-icon">🎵</span>
+            <span class="music-status">ON</span>
+        </button>
+    </div>
+    
+    <audio id="backgroundMusic" loop>
+        <source src="asset/song/sk.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script src="script.js"></script>
+    <script>
+        // Extraire les couleurs dominantes de l'image et adapter le thème
+        document.addEventListener('DOMContentLoaded', function() {
+            const heroImage = document.querySelector('.hero-image');
+            const pageHome = document.querySelector('.page-home');
+            
+            if (heroImage && pageHome) {
+                // Fonction pour extraire et appliquer les couleurs
+                function extractAndApplyColors() {
+                    try {
+                        // Créer un canvas pour analyser l'image
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Utiliser la taille réelle de l'image pour une meilleure analyse
+                        canvas.width = heroImage.naturalWidth || heroImage.width;
+                        canvas.height = heroImage.naturalHeight || heroImage.height;
+                        
+                        // Dessiner l'image sur le canvas
+                        ctx.drawImage(heroImage, 0, 0, canvas.width, canvas.height);
+                        
+                        // Obtenir les données de l'image
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imageData.data;
+                        
+                        // Analyser toutes les couleurs et créer un histogramme
+                        const colorMap = {};
+                        let totalPixels = 0;
+                        
+                        // Parcourir tous les pixels
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+                            const a = data[i + 3];
+                            
+                            // Ignorer les pixels transparents ou presque transparents
+                            if (a < 128) continue;
+                            
+                            // Arrondir les couleurs pour regrouper les nuances similaires
+                            const roundedR = Math.floor(r / 10) * 10;
+                            const roundedG = Math.floor(g / 10) * 10;
+                            const roundedB = Math.floor(b / 10) * 10;
+                            
+                            const colorKey = `${roundedR},${roundedG},${roundedB}`;
+                            
+                            if (!colorMap[colorKey]) {
+                                colorMap[colorKey] = { r: roundedR, g: roundedG, b: roundedB, count: 0 };
+                            }
+                            colorMap[colorKey].count++;
+                            totalPixels++;
+                        }
+                        
+                        // Trier les couleurs par fréquence
+                        const sortedColors = Object.values(colorMap)
+                            .sort((a, b) => b.count - a.count)
+                            .filter(color => {
+                                // Filtrer les couleurs trop sombres ou trop claires
+                                const brightness = (color.r + color.g + color.b) / 3;
+                                return brightness > 50 && brightness < 240;
+                            });
+                        
+                        if (sortedColors.length > 0) {
+                            // Prendre les 2 couleurs les plus fréquentes
+                            const color1 = sortedColors[0];
+                            const color2 = sortedColors.length > 1 ? sortedColors[1] : sortedColors[0];
+                            
+                            // Convertir en couleurs pastel douces
+                            const pastelR1 = Math.min(255, Math.floor((color1.r * 0.7 + 255 * 0.3)));
+                            const pastelG1 = Math.min(255, Math.floor((color1.g * 0.7 + 255 * 0.3)));
+                            const pastelB1 = Math.min(255, Math.floor((color1.b * 0.7 + 255 * 0.3)));
+                            
+                            const pastelR2 = Math.min(255, Math.floor((color2.r * 0.7 + 255 * 0.3)));
+                            const pastelG2 = Math.min(255, Math.floor((color2.g * 0.7 + 255 * 0.3)));
+                            const pastelB2 = Math.min(255, Math.floor((color2.b * 0.7 + 255 * 0.3)));
+                            
+                            // Appliquer les couleurs au background
+                            const bgColor1 = `rgba(${pastelR1}, ${pastelG1}, ${pastelB1}, 0.95)`;
+                            const bgColor2 = `rgba(${pastelR2}, ${pastelG2}, ${pastelB2}, 0.95)`;
+                            
+                            pageHome.style.background = `linear-gradient(135deg, ${bgColor1} 0%, ${bgColor2} 100%)`;
+                            
+                            // Mettre à jour les variables CSS pour le reste du site
+                            document.documentElement.style.setProperty('--violet-pastel', `rgb(${pastelR1}, ${pastelG1}, ${pastelB1})`);
+                            document.documentElement.style.setProperty('--rose-pastel', `rgb(${pastelR2}, ${pastelG2}, ${pastelB2})`);
+                            
+                            // Créer des variantes plus foncées
+                            const darkerR1 = Math.max(0, Math.floor(pastelR1 * 0.85));
+                            const darkerG1 = Math.max(0, Math.floor(pastelG1 * 0.85));
+                            const darkerB1 = Math.max(0, Math.floor(pastelB1 * 0.85));
+                            
+                            document.documentElement.style.setProperty('--violet-fonce', `rgb(${darkerR1}, ${darkerG1}, ${darkerB1})`);
+                            document.documentElement.style.setProperty('--rose-fonce', `rgb(${Math.max(0, Math.floor(pastelR2 * 0.85))}, ${Math.max(0, Math.floor(pastelG2 * 0.85))}, ${Math.max(0, Math.floor(pastelB2 * 0.85))})`);
+                            
+                            console.log('Couleurs extraites et appliquées:', {
+                                color1: `rgb(${pastelR1}, ${pastelG1}, ${pastelB1})`,
+                                color2: `rgb(${pastelR2}, ${pastelG2}, ${pastelB2})`
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Erreur lors de l\'extraction des couleurs:', error);
+                    }
+                }
+                
+                // Essayer d'extraire les couleurs quand l'image est chargée
+                if (heroImage.complete && heroImage.naturalWidth > 0) {
+                    extractAndApplyColors();
+                } else {
+                    heroImage.addEventListener('load', extractAndApplyColors);
+                    heroImage.addEventListener('error', function() {
+                        console.log('Erreur de chargement de l\'image');
+                    });
+                }
+            }
+        });
+    </script>
+    <div class="confetti-container"></div>
+</body>
+</html>
+
