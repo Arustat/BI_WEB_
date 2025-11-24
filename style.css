@@ -765,12 +765,16 @@ body.page-final {
 /* mini photo falling elements (styled like confetti) */
 .confetti-photo {
     position: absolute;
-    width: clamp(28px, 8vmin, 64px);
+    /* Force small thumbnail size for confetti photos to avoid very large images
+       on large viewports. Use important to override inline or competing rules. */
+    width: clamp(24px, 4.5vmin, 64px) !important;
     height: auto;
     border-radius: 6px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.18);
     transform-origin: center;
     animation: confetti-fall linear forwards;
+    display: block;
+    object-fit: cover;
 }
 
 .confetti:nth-child(2n) {

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Souvenirs</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="asset/icon/favicon.ico">
 </head>
 <body class="page-souvenirs">
     <div class="background-balls">
@@ -112,10 +113,17 @@
             // detect video files by extension (case-insensitive)
             const isVideo = /\.(mp4|webm|ogg)$/i.test(photo.src);
             if (isVideo) {
-                // try to use a poster image with same name but .jpg
-                const posterFromSrc = photo.src.replace(/\.[^/.]+$/, '.jpg');
-                img.src = photo.poster || posterFromSrc;
+                // Use explicit poster if provided. If not, use a small SVG placeholder
+                // to avoid showing an old/incorrect thumbnail image.
+                const posterFromSrc = photo.poster || null;
+                if (posterFromSrc) {
+                    img.src = posterFromSrc;
+                } else {
+                    // simple neutral SVG placeholder (data URI)
+                    img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent('\n                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140">\n                          <rect width="100%" height="100%" fill="#f7eef8"/>\n                          <g fill="#9d7fb8" font-family="sans-serif" font-size="18">\n                            <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle">Vidéo</text>\n                          </g>\n                          <polygon points="100,45 160,70 100,95" fill="#8b4fa6" opacity="0.9"/>\n                        </svg>\n                    ');
+                }
                 img.alt = 'Vignette vidéo';
+                img.loading = 'lazy';
                 slide.classList.add('video-slide');
 
                 // play button overlay on the slide
@@ -127,7 +135,7 @@
 
                 // on click open overlay with message + video
                 slide.addEventListener('click', () => {
-                    showOverlay(photo.message, { type: 'video', src: photo.src, poster: photo.poster || posterFromSrc });
+                    showOverlay(photo.message, { type: 'video', src: photo.src, poster: posterFromSrc });
                 });
             } else {
                 img.src = photo.src;
